@@ -13,6 +13,24 @@
     margin-left: -5.5px;
     margin-right: 5.5px;
   }
+
+  /*
+    Inline "visible from" cue for unreleased content shown on preview/local
+    (see <SinceVersion disclaimer="inline">). Rendered as a ::after pseudo-element
+    so it never fragments the host markdown list the way a block wrapper would.
+  */
+  .nuqs-since-version::after {
+    content: ' 🏗️ visible from nuqs@' attr(data-since) ' 🏗️';
+    @apply text-amber-500 dark:text-amber-400;
+    font-size: 0.85em;
+  }
+
+  /* Collapse a list item whose only content is a hidden inline gate (production),
+     so it leaves no stray bullet. The gate's marker is targeted via :has() because
+     the emptied <li> retains whitespace/comment nodes and so is not :empty. */
+  .prose li:has(> .nuqs-gated-empty) {
+    display: none;
+  }
 }
 
 /* Center-align copy button in code blocks with single line */
@@ -25,6 +43,13 @@
 /* Highlighted words in code blocks */
 .shiki:not(.not-fumadocs-codeblock *) code span.highlighted-word {
   @apply -mx-1 rounded-sm border-none px-1;
+  /* Join a word split across several tokens into one box */
+  &:has(+ .highlighted-word) {
+    @apply mr-0 rounded-r-none pr-0;
+  }
+  .highlighted-word + & {
+    @apply ml-0 rounded-l-none pl-0;
+  }
 }
 
 /* Highlighted lines in code blocks */
@@ -34,14 +59,14 @@
   }
 }
 
-.shiki:not(.not-fumadocs-codeblock *):has(> code .line) {
-  & code {
-    /*
-      Reduce vertical padding to allow two inline code blocks
-      on adjacent lines to avoid overlapping.
-    */
-    padding-block: 1.5px;
-  }
+/*
+  Reduce the vertical padding of highlighted inline code so two chips
+  on adjacent lines do not overlap. fumadocs-core's rehype-code emits
+  them as `code.shiki`; the previous selector targeted a `span.shiki`
+  wrapper that no longer exists.
+*/
+code.shiki:not(pre *, .not-fumadocs-codeblock *) {
+  padding-block: 1.5px;
 }
 
 /* Avoid a flash of black (in dark mode) in the navbar background when scrolling */
@@ -63,5 +88,42 @@ header#nd-subnav.bg-fd-background\/80 {
         @apply rounded-t-none border-t-0;
       }
     }
+  }
+}
+
+/*
+  The fumadocs-ui 16.11 notebook rewrite shrank the desktop navbar from
+  64px to 56px, added a 2px gap between sidebar rows, and gave the first
+  sidebar group label a top margin (its `first:mt-0` never applies because
+  the sidebar copies of the nav links, hidden at lg+, precede it).
+  Restore the previous vertical rhythm so content, sidebar and TOC sit
+  where they used to. Desktop only: the navbar was already 56px below md.
+  The layout grid and the sticky offsets read `--fd-header-height` from
+  the layout root; the visible bar reads its own height. Set both.
+*/
+@media (width >= 48rem) {
+  #nd-notebook-layout {
+    --fd-header-height: 4rem;
+    & > #nd-subnav > [data-header-body] {
+      height: 4rem;
+    }
+  }
+}
+@layer utilities {
+  #nd-sidebar .overscroll-contain > * {
+    gap: 0 !important;
+    & > p:nth-of-type(1) {
+      margin-top: 0;
+    }
+  }
+}
+
+/*
+  fumadocs-ui places the code block copy button at top-3; keep it at
+  top-2 so it sits as far from the top edge as from the right one.
+*/
+@layer utilities {
+  figure:has(pre) > div.absolute:has(> button) {
+    @apply top-2;
   }
 }

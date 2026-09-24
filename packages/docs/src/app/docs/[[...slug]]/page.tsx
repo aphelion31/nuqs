@@ -1,4 +1,6 @@
+import { docsPageClassName } from '@/src/components/shared-layout'
 import { useMDXComponents } from '@/mdx-components'
+import type { TOCItemType } from 'fumadocs-core/toc'
 import { AsideSponsors } from '@/src/app/(pages)/_landing/sponsors'
 import { source } from '@/src/app/source'
 import {
@@ -6,6 +8,8 @@ import {
   CopyMarkdownUrlButton,
   ViewOptions
 } from '@/src/components/ai/page-actions'
+import { getPublishedVersion, isPublished } from '@/src/lib/published-version'
+import { gatedHeadingIds } from '@/src/lib/strip-unreleased'
 import { getBaseUrl } from '@/src/lib/url'
 import { github } from '@/src/lib/utils'
 import {
@@ -31,9 +35,22 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
 
   const MDX = page.data.body
 
+  // The ToC is extracted from the raw headings at build time, bypassing the
+  // `SinceVersion` runtime gate — prune headings of unreleased sections so they
+  // don't leak into production's "On this page".
+  const published = await getPublishedVersion()
+  const gated = gatedHeadingIds(await page.data.getText('raw'), version =>
+    isPublished(version, published)
+  )
+  const toc = page.data.toc.filter(
+    item => !gated.has(item.url.replace(/^#/, ''))
+  )
+
   return (
     <DocsPage
-      toc={page.data.toc}
+      className={docsPageClassName}
+      tableOfContentPopover={{ list: { thumbBox: false } }}
+      toc={toc}
       tableOfContent={{
         footer: <AsideSponsors />
       }}

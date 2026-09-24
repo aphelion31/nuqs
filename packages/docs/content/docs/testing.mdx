@@ -3,6 +3,10 @@ title: Testing
 description: Some tips on testing components that use `nuqs`
 ---
 
+import { HumanContent, LLMContent } from '@/src/components/audience'
+import { AnchoredDetails } from '@/src/components/anchored-details'
+import { AnchoredTabs } from '@/src/components/anchored-tabs'
+
 Since nuqs 2, you can unit-test components that use `useQueryState(s){:ts}` hooks
 without needing to mock anything, by using a dedicated testing adapter that will
 facilitate **setting up** your tests (with initial search params) and **asserting**
@@ -32,9 +36,11 @@ const { result } = renderHook(() => useTheHookToTest(), {
 Here is an example for Vitest and Testing Library to test a button rendering
 a counter:
 
-<Tabs items={['Vitest v1', 'Vitest v2']}>
+<HumanContent>
+<AnchoredTabs items={['Vitest v1', 'Vitest v2']}>
+<Tab value="Vitest v1" id="vitest-v1">
 
-```tsx title="counter-button.test.tsx" tab="Vitest v1"
+```tsx title="counter-button.test.tsx"
 // [!code word:withNuqsTestingAdapter]
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -62,7 +68,10 @@ it('should increment the count when clicked', async () => {
 })
 ```
 
-```tsx title="counter-button.test.tsx" tab="Vitest v2"
+</Tab>
+<Tab value="Vitest v2" id="vitest-v2">
+
+```tsx title="counter-button.test.tsx"
 // [!code word:withNuqsTestingAdapter]
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -90,7 +99,71 @@ it('should increment the count when clicked', async () => {
 })
 ```
 
-</Tabs>
+</Tab>
+</AnchoredTabs>
+</HumanContent>
+
+<LLMContent>
+### Vitest v1
+
+```tsx title="counter-button.test.tsx"
+// [!code word:withNuqsTestingAdapter]
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { withNuqsTestingAdapter, type UrlUpdateEvent } from 'nuqs/adapters/testing'
+import { describe, expect, it, vi } from 'vitest'
+import { CounterButton } from './counter-button'
+
+it('should increment the count when clicked', async () => {
+  const user = userEvent.setup()
+  const onUrlUpdate = vi.fn<[UrlUpdateEvent]>()
+  render(<CounterButton />, {
+    // 1. Setup the test by passing initial search params / querystring:
+    wrapper: withNuqsTestingAdapter({ searchParams: '?count=42', onUrlUpdate })
+  })
+  // 2. Act
+  const button = screen.getByRole('button')
+  await user.click(button)
+  // 3. Assert changes in the state and in the (mocked) URL
+  expect(button).toHaveTextContent('count is 43')
+  expect(onUrlUpdate).toHaveBeenCalledOnce()
+  const event = onUrlUpdate.mock.calls[0]![0]!
+  expect(event.queryString).toBe('?count=43')
+  expect(event.searchParams.get('count')).toBe('43')
+  expect(event.options.history).toBe('push')
+})
+```
+
+### Vitest v2
+
+```tsx title="counter-button.test.tsx"
+// [!code word:withNuqsTestingAdapter]
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { withNuqsTestingAdapter, type OnUrlUpdateFunction } from 'nuqs/adapters/testing'
+import { describe, expect, it, vi } from 'vitest'
+import { CounterButton } from './counter-button'
+
+it('should increment the count when clicked', async () => {
+  const user = userEvent.setup()
+  const onUrlUpdate = vi.fn<OnUrlUpdateFunction>()
+  render(<CounterButton />, {
+    // 1. Setup the test by passing initial search params / querystring:
+    wrapper: withNuqsTestingAdapter({ searchParams: '?count=42', onUrlUpdate })
+  })
+  // 2. Act
+  const button = screen.getByRole('button')
+  await user.click(button)
+  // 3. Assert changes in the state and in the (mocked) URL
+  expect(button).toHaveTextContent('count is 43')
+  expect(onUrlUpdate).toHaveBeenCalledOnce()
+  const event = onUrlUpdate.mock.calls[0]![0]!
+  expect(event.queryString).toBe('?count=43')
+  expect(event.searchParams.get('count')).toBe('43')
+  expect(event.options.history).toBe('push')
+})
+```
+</LLMContent>
 
 See issue [#259](https://github.com/47ng/nuqs/issues/259) for more testing-related discussions.
 
@@ -166,18 +239,28 @@ build up on the previous state. This memory is per-adapter instance,
 and so is isolated between tests, but shared for components under the same
 adapter.
 
-<details>
+<HumanContent>
+<AnchoredDetails id="advanced-options">
 <summary className='cursor-pointer'>🧪 Internal/advanced options</summary>
 
 - `rateLimitFactor{:ts}`. By default, rate limiting is disabled when testing,
 as it can lead to unexpected behaviours. Setting this to 1 will enable rate
 limiting with the same factor as in production.
 
-- `resetUrlUpdateQueueOnMount{:ts}`: clear the URL update queue before running the test.
-This is `true{:ts}` by default to isolate tests, but you can set it to `false{:ts}` to keep the
-URL update queue between renders and match the production behaviour more closely.
+- `resetUrlUpdateQueueOnMount{:ts}`: clear the shared URL update queue once when
+this adapter mounts. This is `true{:ts}` by default to isolate tests. Set it to
+`false{:ts}` only when a test intentionally preserves queued updates created
+before mounting the adapter.
 
-</details>
+</AnchoredDetails>
+</HumanContent>
+
+<LLMContent>
+### Internal/advanced options [#advanced-options]
+
+- `rateLimitFactor`: By default, rate limiting is disabled when testing, as it can lead to unexpected behaviours. Setting this to `1` enables rate limiting with the same factor as in production.
+- `resetUrlUpdateQueueOnMount`: clears the shared URL update queue once when this adapter mounts. This is `true` by default to isolate tests. Set it to `false` only when a test intentionally preserves queued updates created before mounting the adapter.
+</LLMContent>
 
 
 ## NuqsTestingAdapter

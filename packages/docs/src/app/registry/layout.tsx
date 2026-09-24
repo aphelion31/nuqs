@@ -51,32 +51,31 @@ export default async function RegistryLayout({
               type: 'separator',
               name: 'Adapters'
             },
-            ...categories.Adapters.map(item => ({
+            ...categories.adapter.map(item => ({
               $id: `#${item.name}`,
               type: 'page' as const,
               name: item.title.replace(/adapter/gi, '').trim(),
               url: `/registry/${item.name}`,
               description: item.description
             })),
-            // todo: Enable this when we have parsers
-            // {
-            //   $id: '#parsers-heading',
-            //   type: 'separator',
-            //   name: 'Parsers'
-            // },
-            // ...categories.Parsers.map(item => ({
-            //   $id: `#${item.name}`,
-            //   type: 'page' as const,
-            //   name: item.title,
-            //   url: `/registry/${item.name}`,
-            //   description: item.description
-            // })),
+            {
+              $id: '#parsers-heading',
+              type: 'separator',
+              name: 'Parsers'
+            },
+            ...categories.parser.map(item => ({
+              $id: `#${item.name}`,
+              type: 'page' as const,
+              name: item.title,
+              url: `/registry/${item.name}`,
+              description: item.description
+            })),
             {
               $id: '#utilities-heading',
               type: 'separator',
               name: 'Utilities'
             },
-            ...categories.Utilities.map(item => ({
+            ...categories.utility.map(item => ({
               $id: `#${item.name}`,
               type: 'page' as const,
               name: item.title,
@@ -89,7 +88,7 @@ export default async function RegistryLayout({
         nav={{ ...sharedLayoutProps.nav, mode: 'top' }}
         sidebar={{
           collapsible: false,
-          banner: SideBanner,
+          banner: <SideBanner />,
           footer: (
             <Suspense>
               <SidebarFooter />

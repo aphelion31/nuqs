@@ -4,20 +4,31 @@ import {
   defineDocs,
   frontmatterSchema
 } from 'fumadocs-mdx/config'
+import lastModified from 'fumadocs-mdx/plugins/last-modified'
 import remarkSmartypants from 'remark-smartypants'
 import { z } from 'zod'
 import { rehypeCodeOptions } from './rehype-code.config'
 import { remarkAudience } from './src/lib/remark-audience'
 
 export default defineConfig({
-  lastModifiedTime: 'git',
+  plugins: [lastModified()],
   mdxOptions: {
     remarkPlugins: [remarkSmartypants, remarkAudience],
-    rehypeCodeOptions
+    rehypeCodeOptions,
+    remarkNpmOptions: {
+      packageManagers: [
+        { name: 'npm', command: () => 'npm i nuqs' },
+        { name: 'pnpm', command: () => 'pnpm add nuqs' },
+        { name: 'yarn', command: () => 'yarn add nuqs' },
+        { name: 'bun', command: () => 'bun add nuqs' },
+        { name: 'deno', command: () => 'deno add nuqs' },
+        { name: 'vlt', command: () => 'vlt install nuqs' }
+      ]
+    }
   }
 })
 
-export const { docs, meta } = defineDocs({
+export const docs = defineDocs({
   dir: 'content/docs',
   docs: {
     schema: frontmatterSchema.extend({
