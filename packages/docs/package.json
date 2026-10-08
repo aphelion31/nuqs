@@ -20,7 +20,8 @@
     "build:registry": "./src/registry/assemble.ts && shadcn build",
     "gen:schema": "./src/schemas/changelog-dto.gen.ts",
     "start": "next start",
-    "postinstall": "fumadocs-mdx",
+    "postinstall": "pnpm run typegen",
+    "typegen": "fumadocs-mdx",
     "test": "fumadocs-mdx && next typegen && fumadocs-mdx && tsc && vitest run"
   },
   "dependencies": {
@@ -43,6 +44,7 @@
     "@radix-ui/react-tooltip": "^1.2.12",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/postcss": "^4.3.3",
+    "@usenotra/geo": "^0.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
